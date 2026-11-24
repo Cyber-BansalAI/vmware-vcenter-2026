@@ -1,6 +1,6 @@
 # Hunt guide: did a group get into our vCenter before the fix?
 
-As of **2026-11-19**. Read [DISCLAIMER.md](../DISCLAIMER.md) first. We have not tested these commands on your systems. Run
+As of **2026-11-24** (first published 2026-11-19; updated 2026-11-24 for CISA's listing and Broadcom's second advisory). Read [DISCLAIMER.md](../DISCLAIMER.md) first. We have not tested these commands on your systems. Run
 them yourself, on copies of the logs where you can, and adjust names and paths to your setup. Nothing in this package runs
 anything for you, and every command shown only reads.
 
@@ -24,6 +24,16 @@ The business-owner version, with five questions to put to that person, is in
   or key fingerprints are in its text. Google says its full list is in
   [a collection for registered users](https://www.virustotal.com/gui/collection/1ea34ca05aa0bed8cce4f29cba20b8ecfd46c9401a3d6eae74769f2e4415b9d6/summary).
   We have not opened it: if you have access, load the hashes from there.
+
+## What changed since 2026-11-19
+
+- **2026-11-20:** CISA added CVE-2026-123890 to its Known Exploited Vulnerabilities catalog. The alert names no actor and
+  gives no count.
+- **2026-11-24:** Broadcom published a second advisory, VMSA-2026-0011. It fixes a different vCenter authentication bypass in
+  the directory service (CVE-2026-123903, rated 9.8) and two critical flaws in ESX, the host software
+  (CVE-2026-123910 and CVE-2026-123911): someone with network access to a host may run code on it. Broadcom lists no
+  workaround and says to update. Neither the advisory nor Broadcom's questions and answers say that any of these is used in
+  attacks. Nothing in `iocs/iocs.csv` relates to them: the indicators below describe the activity Google reported.
 
 ## Two questions, kept apart
 
@@ -50,26 +60,32 @@ back that far. If they do not, write that down: you cannot rule out the earlier 
 
 ## 1. Are we on a fixed version?
 
-Broadcom's matrix for this flaw, read on 2026-11-19. No version is listed as safe for older builds:
+Broadcom's matrix, read on 2026-11-24 (VMSA-2026-0011; Broadcom says its patches are cumulative, so these builds also hold
+the fixes from VMSA-2026-0009). On 2026-11-19 VMSA-2026-0009 had listed 9.1.1.0200 and 9.0.2.0200 for the first flaw. Those
+two builds are below the fixed version for the newer flaw. No version is listed as safe for older builds:
 
 | You run | Fixed version | Note |
 |---|---|---|
-| vCenter in Cloud Foundation or vSphere Foundation 9.1 | 9.1.1.0200 | |
-| vCenter in Cloud Foundation or vSphere Foundation 9.0 | 9.0.2.0200 | |
-| vCenter 8.0 | 8.0 U3m | |
+| vCenter in Cloud Foundation or vSphere Foundation 9.1 | 9.1.2 | VMSA-2026-0009 had listed 9.1.1.0200 |
+| vCenter in Cloud Foundation or vSphere Foundation 9.0 | 9.0.2.0300 | VMSA-2026-0009 had listed 9.0.2.0200 |
+| vCenter 8.0 | 8.0 U3m | Same build in both advisories: if it is already installed, Broadcom says vCenter needs no second update |
 | Cloud Foundation 5.x | vCenter 8.0 U3m through the asynchronous patching process (Broadcom KB 88287) | Cloud Foundation itself moves to 5.2.5 |
 | vCenter 7.0 | No public fix | Only under an extended support contract, through Broadcom Support |
-| Telco Cloud Platform or Infrastructure | See Broadcom KB 463116 | |
+| Telco Cloud Platform or Infrastructure | See Broadcom KB 463501 | VMSA-2026-0009 pointed to KB 463116 |
 
 Things that matter:
 
+- **The hosts need their own update.** ESX was not part of VMSA-2026-0009. The ESX fixes in VMSA-2026-0011 are ESX 9.1.2,
+  ESX 9.0.2.0200 and ESX 8.0 U3m (see the advisory for build names). Updating a host restarts it, and Broadcom says the ESX
+  updates are not eligible for Live Patch. VMware Tools inside virtual machines is updated separately.
 - A vCenter patched in July or August for the earlier flaws (VMSA-2026-0006) **is still open** to this one. Broadcom calls
-  this flaw "new and distinct".
+  this flaw "new and distinct". A vCenter on 9.1.1.0200 or 9.0.2.0200 is open to the newer flaw.
 - Google says its attack tool works against vCenter 7.x and 8.x. Broadcom lists 7.0, 8.0, 9.0 and 9.1. Treat every version
   as affected until you have the fixed build.
 - The update is not eligible for Quick Patch, and vCenter is unavailable for a short while. Virtual machines keep running.
-- 8.0 U3m and 9.0.2.0200 block a later upgrade to Cloud Foundation 9.1.1 until Broadcom's next release (Broadcom calls it a
-  "Back-in-Time" restriction). If an upgrade is in progress, read the FAQ before you patch.
+- 8.0 U3m and 9.0.2.0200 blocked a later upgrade to Cloud Foundation 9.1.1 (Broadcom calls it a "Back-in-Time"
+  restriction). Broadcom says Cloud Foundation 9.1.2 resolves that restriction and that the VMSA-2026-0011 updates cause no
+  new one. If an upgrade is in progress, read Broadcom's questions and answers before you patch.
 
 Read your build number in the vSphere Client (Summary tab) or with PowerCLI:
 
@@ -344,7 +360,10 @@ These come from Google's and Mandiant's guidance and Broadcom's security configu
 - Which hosts legitimately need TCP 2012, 389 and 636 on 8.0 and 9.0, and what TCP 9080 is (the group scanned it).
 - Hashes, domains and key fingerprints. The report does not publish them in its text (see the collection link at the top).
 - A second source for any indicator. Everything in `iocs/iocs.csv` comes from one publisher, so nothing is marked verified.
-- Whether CISA lists the flaw as exploited. Check its catalog again in a day or two.
+- Whether anyone uses the newer flaws (CVE-2026-123903, CVE-2026-123910 and CVE-2026-123911). Broadcom does not say so, and
+  we found no published indicators for them.
+- Who else uses CVE-2026-123890. CISA's catalog has listed it since 2026-11-20, but the alert names no actor and gives no
+  count. We do not know whether the listing rests on Google's report or on other cases.
 
 ## Not sure what you found?
 
@@ -355,7 +374,8 @@ Bring the log lines to your IT person first. If you want a second pair of eyes,
 ## Sources for this guide
 
 Google Threat Intelligence Group and Mandiant, "ARMORY CASTLE Exploits vSphere" (2026-11-19); Broadcom, advisory
-VMSA-2026-0009 and its questions and answers (2026-11-19), the vSphere security configuration guide, and knowledge base
+VMSA-2026-0009 and its questions and answers (2026-11-19), VMSA-2026-0011 and its questions and answers (2026-11-24), CISA's
+alert "CISA Adds Four Known Exploited Vulnerabilities to Catalog" (2026-11-20), the vSphere security configuration guide, and knowledge base
 articles 306962, 312194, 310254, 318197 and 321910; Mandiant, "vSphere and BRICKSTORM Malware: A Defender's Guide" and the
 VCSA hardening tool; Elastic and Splunk published detections for ESXi SSH being enabled. Full credit, links and licence notes
 are in [CREDITS.md](../CREDITS.md). Windows event names and PowerCLI commands are standard tools, not from the sources, and we

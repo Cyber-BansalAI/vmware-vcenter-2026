@@ -1,8 +1,8 @@
 # VMware vCenter flaw CVE-2026-123890: indicators and hunt guide
 
 > **Read first.** This package is aggregated from public research and vendor documents by SOC-Lite by BansalAI. It is not
-> tested by us, it comes with no warranty, and it is not professional advice. It is as of **2026-11-19**, the day the
-> flaw was published, and it will go stale. See [DISCLAIMER.md](DISCLAIMER.md). We are not affiliated with any company
+> tested by us, it comes with no warranty, and it is not professional advice. It is as of **2026-11-24** (first published
+> 2026-11-19, the day the flaw was published), and it will go stale. See [DISCLAIMER.md](DISCLAIMER.md). We are not affiliated with any company
 > credited in [CREDITS.md](CREDITS.md), and none of them reviewed or endorsed this package.
 
 On 2026-11-19 Broadcom published advisory VMSA-2026-0009. One flaw in it, **CVE-2026-123890**, lets someone with network
@@ -11,6 +11,10 @@ access to VMware vCenter get in without a password. Broadcom lists no workaround
 2026, before any fix existed. They describe one break-in: the group got an administrator session on vCenter, copied the
 directory database and the key that signs single sign-on tokens, then moved on to ESXi hosts and copied files out of
 virtual machines.
+
+**Since then:** on 2026-11-20 CISA added the flaw to its catalog of flaws known to be used in attacks. On 2026-11-24 Broadcom
+published a second advisory, VMSA-2026-0011, with a different vCenter login bypass and two critical flaws in ESX hosts. The
+newest fixed versions are in section 1 of the hunt guide.
 
 This repository copies **the indicators the report publishes** (with credit) and adds a guide to checking your own systems.
 
